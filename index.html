@@ -5,42 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mes Sorties Gravel</title>
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Leaflet-GPX -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/2.1.2/gpx.min.js"></script>
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0e0f0e;
-      --bg2:       #161714;
-      --bg3:       #1e1f1c;
-      --border:    rgba(255,255,255,0.08);
-      --border2:   rgba(255,255,255,0.14);
-      --text:      #e8e6df;
-      --text2:     #9a9891;
-      --text3:     #5a5955;
-      --accent:    #c8f04a;
-      --accent2:   #8fb830;
-      --gravel:    #e8914a;
-      --route:     #5b9ef4;
-      --fait:      #c8f04a;
-      --a-tester:  #f4d45b;
-      --hiver:     #7bc8f4;
-      --ete:       #f4a35b;
+      --bg:          #0e0f0e;
+      --bg2:         #161714;
+      --bg3:         #1e1f1c;
+      --border:      rgba(255,255,255,0.08);
+      --border2:     rgba(255,255,255,0.14);
+      --text:        #e8e6df;
+      --text2:       #9a9891;
+      --text3:       #5a5955;
+      --accent:      #c8f04a;
+      --gravel:      #e8914a;
+      --route:       #5b9ef4;
+      --fait:        #c8f04a;
+      --a-tester:    #f4d45b;
+      --hiver:       #7bc8f4;
+      --ete:         #f4a35b;
       --intersaison: #b89ef4;
     }
 
     html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
 
-    /* ─── LAYOUT ─── */
     .app { display: grid; grid-template-rows: 52px 1fr; grid-template-columns: 300px 1fr; height: 100vh; }
 
     /* ─── HEADER ─── */
@@ -65,37 +58,46 @@
       overflow: hidden;
     }
 
-    .filters { padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .filters {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow-y: auto;
+      max-height: 52vh;
+    }
+    .filters::-webkit-scrollbar { width: 3px; }
+    .filters::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
     .filter-title { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+    .filter-group { margin-bottom: 10px; }
+    .filter-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; display: block; }
 
-    .filter-group { margin-bottom: 12px; }
-    .filter-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; display: block; }
-
-    .toggle-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .toggle-row { display: flex; gap: 5px; flex-wrap: wrap; }
     .toggle {
       font-size: 11px; font-weight: 500;
-      padding: 4px 10px; border-radius: 20px;
+      padding: 3px 9px; border-radius: 20px;
       border: 1px solid var(--border2);
       background: transparent; color: var(--text2);
       cursor: pointer; transition: all 0.15s; white-space: nowrap;
     }
     .toggle:hover { border-color: var(--text2); color: var(--text); }
-    .toggle.active { background: var(--bg3); border-color: var(--border2); }
-    .toggle.active.t-gravel   { border-color: var(--gravel); color: var(--gravel); }
-    .toggle.active.t-route    { border-color: var(--route); color: var(--route); }
-    .toggle.active.t-fait     { border-color: var(--fait); color: var(--fait); }
-    .toggle.active.t-a_tester { border-color: var(--a-tester); color: var(--a-tester); }
-    .toggle.active.t-hiver    { border-color: var(--hiver); color: var(--hiver); }
-    .toggle.active.t-ete      { border-color: var(--ete); color: var(--ete); }
+    .toggle.active                { background: var(--bg3); }
+    .toggle.active.t-gravel      { border-color: var(--gravel); color: var(--gravel); }
+    .toggle.active.t-route       { border-color: var(--route); color: var(--route); }
+    .toggle.active.t-fait        { border-color: var(--fait); color: var(--fait); }
+    .toggle.active.t-a_tester    { border-color: var(--a-tester); color: var(--a-tester); }
+    .toggle.active.t-hiver       { border-color: var(--hiver); color: var(--hiver); }
+    .toggle.active.t-ete         { border-color: var(--ete); color: var(--ete); }
     .toggle.active.t-intersaison { border-color: var(--intersaison); color: var(--intersaison); }
+    .toggle.active.t-year,
+    .toggle.active.t-dist,
+    .toggle.active.t-elev        { border-color: var(--accent); color: var(--accent); }
 
-    /* Dot indicators on toggles */
     .toggle .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
     /* ─── RIDE LIST ─── */
     .ride-list { flex: 1; overflow-y: auto; padding: 8px; }
     .ride-list::-webkit-scrollbar { width: 4px; }
-    .ride-list::-webkit-scrollbar-track { background: transparent; }
     .ride-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
     .ride-card {
@@ -104,78 +106,71 @@
       cursor: pointer; transition: all 0.15s;
       position: relative; overflow: hidden;
     }
-    .ride-card::before {
-      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    }
+    .ride-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
     .ride-card.type-gravel::before { background: var(--gravel); }
     .ride-card.type-route::before  { background: var(--route); }
     .ride-card:hover { background: var(--bg3); border-color: var(--border2); }
     .ride-card.selected { background: var(--bg3); border-color: var(--border2); }
+    .ride-card.is-private { opacity: 0.55; }
 
     .ride-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
     .ride-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; }
     .ride-badges { display: flex; gap: 4px; flex-shrink: 0; }
-    .badge {
-      font-size: 9px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
-      padding: 2px 6px; border-radius: 10px;
-    }
+    .badge { font-size: 9px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 10px; }
     .badge-fait     { background: rgba(200,240,74,0.12); color: var(--fait); }
     .badge-a_tester { background: rgba(244,212,91,0.12); color: var(--a-tester); }
     .badge-gravel   { background: rgba(232,145,74,0.12); color: var(--gravel); }
     .badge-route    { background: rgba(91,158,244,0.12); color: var(--route); }
+    .badge-private  { background: rgba(90,89,85,0.2); color: var(--text3); }
 
     .ride-meta { display: flex; gap: 12px; margin-top: 5px; }
     .ride-meta span { font-size: 11px; color: var(--text2); }
     .ride-date { font-size: 10px; color: var(--text3); margin-top: 3px; font-family: 'Space Mono', monospace; }
-
     .no-results { padding: 24px 16px; text-align: center; font-size: 13px; color: var(--text3); }
 
     /* ─── SIDEBAR FOOTER ─── */
     .sidebar-footer { padding: 10px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
     .export-btn {
-      width: 100%; padding: 7px; font-size: 11px; font-weight: 500;
-      letter-spacing: 0.03em; border-radius: 6px;
-      border: 1px solid var(--border2); background: transparent;
-      color: var(--text3); cursor: pointer; transition: all 0.15s;
+      width: 100%; padding: 7px; font-size: 11px; font-weight: 500; letter-spacing: 0.03em;
+      border-radius: 6px; border: 1px solid var(--border2);
+      background: transparent; color: var(--text3); cursor: pointer; transition: all 0.15s;
     }
-    .export-btn:hover { border-color: var(--border2); color: var(--text2); background: var(--bg3); }
+    .export-btn:hover { color: var(--text2); background: var(--bg3); }
 
     /* ─── MAP ─── */
     #map { width: 100%; height: 100%; background: #0a0b09; }
 
     /* ─── POPUP ─── */
     .leaflet-popup-content-wrapper {
-      background: var(--bg2) !important;
-      border: 1px solid var(--border2) !important;
-      border-radius: 10px !important;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+      background: var(--bg2) !important; border: 1px solid var(--border2) !important;
+      border-radius: 10px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
       color: var(--text) !important;
     }
     .leaflet-popup-tip { background: var(--bg2) !important; }
     .leaflet-popup-content { margin: 14px 16px !important; min-width: 220px; }
 
-    .popup-name { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+    .popup-name  { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
     .popup-badges { display: flex; gap: 5px; margin-bottom: 10px; }
     .popup-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .popup-stat { background: var(--bg3); border-radius: 6px; padding: 6px 8px; }
+    .popup-stat  { background: var(--bg3); border-radius: 6px; padding: 6px 8px; }
     .popup-stat .pval { font-size: 16px; font-weight: 600; font-family: 'Space Mono', monospace; }
     .popup-stat .plbl { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
-    .popup-desc { font-size: 12px; color: var(--text2); margin-top: 8px; line-height: 1.5; border-top: 1px solid var(--border); padding-top: 8px; }
+    .popup-desc  { font-size: 12px; color: var(--text2); margin-top: 8px; line-height: 1.5; border-top: 1px solid var(--border); padding-top: 8px; }
 
-    /* Profil altimétrique */
-    .popup-elev { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .popup-elev       { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
     .popup-elev-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
-    .elev-svg { display: block; width: 100%; height: auto; }
-    .elev-range { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); font-family: 'Space Mono', monospace; margin-top: 2px; }
+    .elev-svg         { display: block; width: 100%; height: auto; }
+    .elev-range       { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); font-family: 'Space Mono', monospace; margin-top: 2px; }
 
-    /* Bouton toggle statut */
-    .popup-toggle-btn {
-      width: 100%; margin-top: 10px; padding: 7px; font-size: 12px; font-weight: 500;
+    .popup-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .popup-btn {
+      flex: 1; padding: 7px 6px; font-size: 11px; font-weight: 500;
       border-radius: 6px; border: 1px solid var(--border2);
       background: var(--bg3); color: var(--text2);
-      cursor: pointer; transition: all 0.15s;
+      cursor: pointer; transition: all 0.15s; text-align: center;
     }
-    .popup-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .popup-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .popup-btn.is-private { border-color: var(--a-tester); color: var(--a-tester); }
 
     /* ─── MAP CONTROLS ─── */
     .leaflet-control-zoom { border: 1px solid var(--border2) !important; border-radius: 8px !important; overflow: hidden; }
@@ -186,24 +181,20 @@
     .timeline {
       position: fixed; bottom: 16px; left: 316px; right: 16px;
       background: var(--bg2); border: 1px solid var(--border2);
-      border-radius: 12px; padding: 10px 16px 8px;
-      z-index: 1000;
+      border-radius: 12px; padding: 10px 16px 8px; z-index: 1000;
     }
     .timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .timeline-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
     .timeline-range { font-size: 11px; color: var(--text2); font-family: 'Space Mono', monospace; }
-
     .timeline-track { position: relative; height: 32px; }
-    .timeline-axis { position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: var(--border2); }
-    .timeline-dots { position: absolute; bottom: 6px; left: 0; right: 0; height: 20px; }
+    .timeline-axis  { position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: var(--border2); }
+    .timeline-dots  { position: absolute; bottom: 6px; left: 0; right: 0; height: 20px; }
     .t-dot {
       position: absolute; width: 8px; height: 8px; border-radius: 50%;
-      transform: translateX(-50%);
-      cursor: pointer; transition: transform 0.15s;
+      transform: translateX(-50%); cursor: pointer; transition: transform 0.15s;
       border: 1px solid rgba(0,0,0,0.3);
     }
     .t-dot:hover { transform: translateX(-50%) scale(1.4); }
-    .t-dot.dimmed { opacity: 0.25; }
     .timeline-year-labels { display: flex; justify-content: space-between; margin-top: 4px; }
     .timeline-year-labels span { font-size: 10px; color: var(--text3); font-family: 'Space Mono', monospace; }
   </style>
@@ -213,9 +204,9 @@
 <div class="app">
   <header>
     <div class="logo">// MES SORTIES</div>
-    <div class="stats-bar" id="stats-bar">
+    <div class="stats-bar">
       <div class="stat"><strong id="s-total">0</strong> sorties</div>
-      <div class="stat"><strong id="s-km">0</strong> km total</div>
+      <div class="stat"><strong id="s-km">0</strong> km</div>
       <div class="stat"><strong id="s-dplus">0</strong> m D+</div>
       <div class="stat"><strong id="s-gravel">0</strong> gravel</div>
       <div class="stat"><strong id="s-route">0</strong> route</div>
@@ -265,6 +256,29 @@
           </button>
         </div>
       </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Année</span>
+        <div class="toggle-row" id="year-toggles"><!-- généré dynamiquement --></div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Distance</span>
+        <div class="toggle-row">
+          <button class="toggle active t-dist" data-filter="distance" data-value="<50">&lt; 50 km</button>
+          <button class="toggle active t-dist" data-filter="distance" data-value="50-100">50–100</button>
+          <button class="toggle active t-dist" data-filter="distance" data-value=">100">&gt; 100 km</button>
+        </div>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:0">
+        <span class="filter-label">Dénivelé</span>
+        <div class="toggle-row">
+          <button class="toggle active t-elev" data-filter="elevation" data-value="<500">&lt; 500 m</button>
+          <button class="toggle active t-elev" data-filter="elevation" data-value="500-1000">500–1k</button>
+          <button class="toggle active t-elev" data-filter="elevation" data-value=">1000">&gt; 1000 m</button>
+        </div>
+      </div>
     </div>
 
     <div class="ride-list" id="ride-list"></div>
@@ -277,8 +291,7 @@
   <div id="map"></div>
 </div>
 
-<!-- Timeline -->
-<div class="timeline" id="timeline">
+<div class="timeline">
   <div class="timeline-header">
     <span class="timeline-label">Timeline</span>
     <span class="timeline-range" id="timeline-range">—</span>
@@ -291,38 +304,45 @@
 </div>
 
 <script>
-const COLORS = {
-  type:    { gravel: '#e8914a', route: '#5b9ef4' },
-  statut:  { fait: '#c8f04a', a_tester: '#f4d45b' },
-  saison:  { ete: '#f4a35b', hiver: '#7bc8f4', intersaison: '#b89ef4' }
+// ─── ÉTAT GLOBAL ──────────────────────────────────────────────────────────────
+let allRides      = [];
+let layers        = {};         // id → L.GPX layer
+let rideColors    = {};         // id → couleur palette
+let layerElevData = {};         // id → [[dist, alt], ...]
+let statutOverrides = {};       // localStorage: statut modifié
+let publicOverrides = {};       // localStorage: visibilité publique
+
+let activeFilters = {
+  type:      new Set(['gravel', 'route']),
+  statut:    new Set(['fait', 'a_tester']),
+  saison:    new Set(['ete', 'hiver', 'intersaison']),
+  year:      new Set(),           // peuplé après chargement
+  distance:  new Set(['<50', '50-100', '>100']),
+  elevation: new Set(['<500', '500-1000', '>1000']),
 };
 
-let allRides = [];
-let layers = {};         // id -> L.GPX layer
-let rideColors = {};     // id -> couleur de trace
-let layerElevData = {};  // id -> données d'altitude [[dist, alt], ...]
-let statutOverrides = {};// id -> statut modifié localement (localStorage)
-let activeFilters = { type: new Set(['gravel','route']), statut: new Set(['fait','a_tester']), saison: new Set(['ete','hiver','intersaison']) };
+const DISTANCE_BUCKETS = {
+  '<50':     r => r.distance_km < 50,
+  '50-100':  r => r.distance_km >= 50 && r.distance_km <= 100,
+  '>100':    r => r.distance_km > 100,
+};
+const ELEVATION_BUCKETS = {
+  '<500':     r => r.elevation_m < 500,
+  '500-1000': r => r.elevation_m >= 500 && r.elevation_m <= 1000,
+  '>1000':    r => r.elevation_m > 1000,
+};
+
 let selectedId = null;
 
-const map = L.map('map', {
-  center: [48.65, 2.3],
-  zoom: 9,
-  zoomControl: true,
-  attributionControl: false
-});
-
+// ─── CARTE LEAFLET ────────────────────────────────────────────────────────────
+const map = L.map('map', { center: [48.65, 2.3], zoom: 9, attributionControl: false });
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-  iconUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+  iconUrl:       'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
   shadowUrl: ''
 });
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 18
-}).addTo(map);
-
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
 L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(map);
 
 const PALETTE = [
@@ -330,19 +350,13 @@ const PALETTE = [
   '#34d399','#a78bfa','#fb7185','#38bdf8','#facc15',
   '#4ade80','#f97316','#818cf8','#2dd4bf','#e879f9'
 ];
+function getTrackColor(ride, index) { return PALETTE[index % PALETTE.length]; }
 
-function getTrackColor(ride, index) {
-  return PALETTE[index % PALETTE.length];
-}
-
-// ─── STATUT OVERRIDES (localStorage) ─────────────────────────────────────────
+// ─── STATUT (localStorage) ────────────────────────────────────────────────────
 function loadStatutOverrides() {
-  try {
-    statutOverrides = JSON.parse(localStorage.getItem('gravel-statut-overrides') || '{}');
-  } catch(e) { statutOverrides = {}; }
-  allRides.forEach(ride => {
-    if (statutOverrides[ride.id]) ride.statut = statutOverrides[ride.id];
-  });
+  try { statutOverrides = JSON.parse(localStorage.getItem('gravel-statut-overrides') || '{}'); }
+  catch(e) { statutOverrides = {}; }
+  allRides.forEach(r => { if (statutOverrides[r.id]) r.statut = statutOverrides[r.id]; });
 }
 
 function toggleStatut(id) {
@@ -351,57 +365,59 @@ function toggleStatut(id) {
   ride.statut = ride.statut === 'fait' ? 'a_tester' : 'fait';
   statutOverrides[ride.id] = ride.statut;
   localStorage.setItem('gravel-statut-overrides', JSON.stringify(statutOverrides));
-
-  // Rebind popup avec le nouveau contenu
   const layer = layers[id];
-  if (layer) {
-    layer.bindPopup(popupHTML(ride, layerElevData[id]), { maxWidth: 300 });
-  }
-
+  if (layer) layer.bindPopup(popupHTML(ride, layerElevData[id]), { maxWidth: 300 });
   selectedId = id;
   applyFilters();
+  if (layer && map.hasLayer(layer)) setTimeout(() => layer.openPopup(), 50);
+}
 
-  // Ré-ouvrir le popup si la sortie est encore visible
-  if (layer && map.hasLayer(layer)) {
-    setTimeout(() => layer.openPopup(), 50);
-  }
+// ─── VISIBILITÉ PUBLIQUE (localStorage) ───────────────────────────────────────
+function loadPublicOverrides() {
+  try { publicOverrides = JSON.parse(localStorage.getItem('gravel-public-overrides') || '{}'); }
+  catch(e) { publicOverrides = {}; }
+  allRides.forEach(r => {
+    if (publicOverrides[r.id] !== undefined) r.public = publicOverrides[r.id];
+    else if (r.public === undefined || r.public === null) r.public = true;
+  });
+}
+
+function togglePublic(id) {
+  const ride = allRides.find(r => r.id === id);
+  if (!ride) return;
+  ride.public = !ride.public;
+  publicOverrides[ride.id] = ride.public;
+  localStorage.setItem('gravel-public-overrides', JSON.stringify(publicOverrides));
+  const layer = layers[id];
+  if (layer) layer.bindPopup(popupHTML(ride, layerElevData[id]), { maxWidth: 300 });
+  selectedId = id;
+  renderList();
+  if (layer && map.hasLayer(layer)) setTimeout(() => layer.openPopup(), 50);
 }
 
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
 function exportRidesJson() {
-  const data = JSON.stringify(allRides, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(allRides, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'rides.json';
-  a.click();
+  const a = document.createElement('a'); a.href = url; a.download = 'rides.json'; a.click();
   URL.revokeObjectURL(url);
 }
 
 // ─── PROFIL ALTIMÉTRIQUE ──────────────────────────────────────────────────────
 function getElevationPoints(layer) {
-  try {
-    return layer.get_elevation_data();
-  } catch(e) { return null; }
+  try { return layer.get_elevation_data(); } catch(e) { return null; }
 }
 
 function elevationSVG(elevData) {
   if (!elevData || elevData.length < 3) return '';
   const W = 220, H = 48;
-  const alts  = elevData.map(p => p[1]);
-  const dists = elevData.map(p => p[0]);
-  const minA = Math.min(...alts),  maxA = Math.max(...alts);
-  const minD = dists[0],           maxD = dists[dists.length - 1];
-  const aRange = maxA - minA || 1;
-  const dRange = maxD - minD || 1;
-
-  const pts = elevData.map(([d, a]) => {
-    const x = ((d - minD) / dRange * W).toFixed(1);
-    const y = (H - (a - minA) / aRange * (H - 4)).toFixed(1);
-    return `${x},${y}`;
-  }).join(' ');
-
+  const alts = elevData.map(p => p[1]), dists = elevData.map(p => p[0]);
+  const minA = Math.min(...alts), maxA = Math.max(...alts);
+  const minD = dists[0], maxD = dists[dists.length - 1];
+  const aRange = maxA - minA || 1, dRange = maxD - minD || 1;
+  const pts = elevData.map(([d, a]) =>
+    `${((d-minD)/dRange*W).toFixed(1)},${(H-(a-minA)/aRange*(H-4)).toFixed(1)}`
+  ).join(' ');
   return `
     <div class="popup-elev">
       <div class="popup-elev-label">Profil</div>
@@ -413,11 +429,9 @@ function elevationSVG(elevData) {
           </linearGradient>
         </defs>
         <polygon points="0,${H} ${pts} ${W},${H}" fill="url(#eg)"/>
-        <polyline points="${pts}" fill="none" stroke="#c8f04a" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="${pts}" fill="none" stroke="#c8f04a" stroke-width="1.5" stroke-linejoin="round"/>
       </svg>
-      <div class="elev-range">
-        <span>${Math.round(minA)} m</span><span>${Math.round(maxA)} m</span>
-      </div>
+      <div class="elev-range"><span>${Math.round(minA)} m</span><span>${Math.round(maxA)} m</span></div>
     </div>`;
 }
 
@@ -425,12 +439,13 @@ function elevationSVG(elevData) {
 function popupHTML(ride, elevData) {
   const date = new Date(ride.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
   const saisonLabel = { ete:'Été', hiver:'Hiver', intersaison:'Intersaison' }[ride.saison] || ride.saison;
-  const btnLabel = ride.statut === 'fait' ? '⟳ Remettre à tester' : '✓ Marquer comme fait';
+  const isPublic = ride.public !== false;
   return `
     <div class="popup-name">${ride.name}</div>
     <div class="popup-badges">
       <span class="badge badge-${ride.type}">${ride.type}</span>
       <span class="badge badge-${ride.statut}">${ride.statut === 'a_tester' ? 'À tester' : 'Déjà fait'}</span>
+      ${!isPublic ? '<span class="badge badge-private">🔒 Privé</span>' : ''}
     </div>
     <div class="popup-stats">
       <div class="popup-stat"><div class="pval">${ride.distance_km}</div><div class="plbl">km</div></div>
@@ -441,15 +456,25 @@ function popupHTML(ride, elevData) {
     ${ride.description ? `<div class="popup-desc">${ride.description}</div>` : ''}
     <div class="popup-desc" style="border-top:none;padding-top:4px;margin-top:0">${date}</div>
     ${elevationSVG(elevData)}
-    <button class="popup-toggle-btn" onclick="toggleStatut('${ride.id}')">${btnLabel}</button>
-  `;
+    <div class="popup-actions">
+      <button class="popup-btn" onclick="toggleStatut('${ride.id}')">
+        ${ride.statut === 'fait' ? '⟳ À tester' : '✓ Marquer fait'}
+      </button>
+      <button class="popup-btn ${!isPublic ? 'is-private' : ''}" onclick="togglePublic('${ride.id}')">
+        ${isPublic ? '🔒 Masquer' : '🌍 Publier'}
+      </button>
+    </div>`;
 }
 
-// ─── FILTRES & UI ─────────────────────────────────────────────────────────────
+// ─── FILTRES ──────────────────────────────────────────────────────────────────
 function isVisible(ride) {
-  return activeFilters.type.has(ride.type) &&
-         activeFilters.statut.has(ride.statut) &&
-         activeFilters.saison.has(ride.saison);
+  if (!activeFilters.type.has(ride.type)) return false;
+  if (!activeFilters.statut.has(ride.statut)) return false;
+  if (!activeFilters.saison.has(ride.saison)) return false;
+  if (activeFilters.year.size > 0 && !activeFilters.year.has(ride.date.slice(0, 4))) return false;
+  if (![...activeFilters.distance].some(b => DISTANCE_BUCKETS[b]?.(ride))) return false;
+  if (![...activeFilters.elevation].some(b => ELEVATION_BUCKETS[b]?.(ride))) return false;
+  return true;
 }
 
 function applyFilters() {
@@ -461,36 +486,62 @@ function applyFilters() {
       else         { if (map.hasLayer(layer))  map.removeLayer(layer); }
     }
   });
-  renderList();
-  renderTimeline();
-  updateStats();
+  renderList(); renderTimeline(); updateStats();
 }
 
+// Event delegation — fonctionne aussi pour les toggles d'année générés dynamiquement
+document.querySelector('.filters').addEventListener('click', e => {
+  const btn = e.target.closest('.toggle');
+  if (!btn || !btn.dataset.filter) return;
+  const { filter, value } = btn.dataset;
+  if (activeFilters[filter].has(value)) {
+    if (activeFilters[filter].size === 1) return; // garde au moins un actif
+    activeFilters[filter].delete(value);
+    btn.classList.remove('active');
+  } else {
+    activeFilters[filter].add(value);
+    btn.classList.add('active');
+  }
+  applyFilters();
+});
+
+// ─── FILTRES ANNÉE (dynamiques) ───────────────────────────────────────────────
+function renderYearToggles() {
+  const years = [...new Set(allRides.map(r => r.date.slice(0, 4)))].sort();
+  years.forEach(y => activeFilters.year.add(y));
+  document.getElementById('year-toggles').innerHTML = years.map(y =>
+    `<button class="toggle active t-year" data-filter="year" data-value="${y}">${y}</button>`
+  ).join('');
+}
+
+// ─── LISTE & STATS ────────────────────────────────────────────────────────────
 function renderList() {
   const list = document.getElementById('ride-list');
-  const visible = allRides.filter(isVisible).sort((a,b) => new Date(b.date)-new Date(a.date));
+  const visible = allRides.filter(isVisible).sort((a, b) => new Date(b.date) - new Date(a.date));
   if (!visible.length) { list.innerHTML = '<div class="no-results">Aucune sortie avec ces filtres.</div>'; return; }
   list.innerHTML = visible.map(ride => {
     const date = new Date(ride.date).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const isPrivate = ride.public === false;
     return `
-    <div class="ride-card type-${ride.type} ${selectedId===ride.id?'selected':''}" data-id="${ride.id}">
-      <div class="ride-card-top">
-        <div class="ride-name">${ride.name}</div>
-        <div class="ride-badges">
-          <span class="badge badge-${ride.statut}">${ride.statut==='a_tester'?'À tester':'Fait'}</span>
+      <div class="ride-card type-${ride.type} ${selectedId===ride.id?'selected':''} ${isPrivate?'is-private':''}" data-id="${ride.id}">
+        <div class="ride-card-top">
+          <div class="ride-name">${ride.name}</div>
+          <div class="ride-badges">
+            ${isPrivate ? '<span class="badge badge-private">🔒</span>' : ''}
+            <span class="badge badge-${ride.statut}">${ride.statut==='a_tester'?'À tester':'Fait'}</span>
+          </div>
         </div>
-      </div>
-      <div class="ride-meta">
-        <span>${ride.distance_km} km</span>
-        <span>${ride.elevation_m} m D+</span>
-      </div>
-      <div class="ride-date">${date} · ${ride.source}</div>
-    </div>`;
+        <div class="ride-meta">
+          <span>${ride.distance_km} km</span>
+          <span>${ride.elevation_m} m D+</span>
+        </div>
+        <div class="ride-date">${date} · ${ride.source}</div>
+      </div>`;
   }).join('');
 
-  list.querySelectorAll('.ride-card').forEach(card => {
-    card.addEventListener('click', () => focusRide(card.dataset.id));
-  });
+  list.querySelectorAll('.ride-card').forEach(card =>
+    card.addEventListener('click', () => focusRide(card.dataset.id))
+  );
 }
 
 function focusRide(id) {
@@ -506,7 +557,7 @@ function focusRide(id) {
 function updateStats() {
   const visible = allRides.filter(isVisible);
   document.getElementById('s-total').textContent  = visible.length;
-  document.getElementById('s-km').textContent     = visible.reduce((s,r)=>s+r.distance_km,0).toLocaleString('fr-FR');
+  document.getElementById('s-km').textContent     = Math.round(visible.reduce((s,r)=>s+r.distance_km,0)).toLocaleString('fr-FR');
   document.getElementById('s-dplus').textContent  = visible.reduce((s,r)=>s+r.elevation_m,0).toLocaleString('fr-FR');
   document.getElementById('s-gravel').textContent = visible.filter(r=>r.type==='gravel').length;
   document.getElementById('s-route').textContent  = visible.filter(r=>r.type==='route').length;
@@ -519,62 +570,53 @@ function renderTimeline() {
   const rangeEl = document.getElementById('timeline-range');
   if (!visible.length) { dots.innerHTML=''; yearsEl.innerHTML=''; rangeEl.textContent='—'; return; }
 
-  const dates = visible.map(r=>new Date(r.date));
+  const dates = visible.map(r => new Date(r.date));
   const minD = Math.min(...dates), maxD = Math.max(...dates);
   const span = maxD - minD || 1;
-
-  const minYear = new Date(minD).getFullYear();
-  const maxYear = new Date(maxD).getFullYear();
+  const minYear = new Date(minD).getFullYear(), maxYear = new Date(maxD).getFullYear();
   rangeEl.textContent = minYear === maxYear ? String(minYear) : `${minYear} → ${maxYear}`;
 
   dots.innerHTML = visible.map(ride => {
     const x = ((new Date(ride.date)-minD)/span*100).toFixed(1);
-    const col = rideColors[ride.id] || '#888';
-    return `<div class="t-dot" style="left:${x}%;background:${col}" title="${ride.name}" data-id="${ride.id}"></div>`;
+    return `<div class="t-dot" style="left:${x}%;background:${rideColors[ride.id]||'#888'}" title="${ride.name}" data-id="${ride.id}"></div>`;
   }).join('');
+  dots.querySelectorAll('.t-dot').forEach(d => d.addEventListener('click', () => focusRide(d.dataset.id)));
 
-  dots.querySelectorAll('.t-dot').forEach(d => {
-    d.addEventListener('click', () => focusRide(d.dataset.id));
-  });
-
-  const years = [];
-  for (let y = minYear; y <= maxYear; y++) years.push(y);
-  yearsEl.innerHTML = years.map(y => `<span>${y}</span>`).join('');
+  const years = []; for (let y=minYear; y<=maxYear; y++) years.push(y);
+  yearsEl.innerHTML = years.map(y=>`<span>${y}</span>`).join('');
 }
 
 // ─── CHARGEMENT PROGRESSIF ────────────────────────────────────────────────────
 async function loadRides() {
-  const res = await fetch('data/rides.json');
+  // Essaie rides_public.json (site déployé), sinon rides.json (local)
+  let res;
+  try {
+    res = await fetch('data/rides_public.json');
+    if (!res.ok) throw new Error();
+  } catch(e) {
+    res = await fetch('data/rides.json');
+  }
   allRides = await res.json();
 
-  // Applique les overrides de statut depuis localStorage
   loadStatutOverrides();
-
-  // Assigne les couleurs et affiche l'UI immédiatement
+  loadPublicOverrides();
   allRides.forEach((ride, i) => { rideColors[ride.id] = getTrackColor(ride, i); });
-  renderList();
-  renderTimeline();
-  updateStats();
 
-  // Compteur de progression GPX
+  renderYearToggles();
+  renderList(); renderTimeline(); updateStats();
+
   const ridesWithGpx = allRides.filter(r => r.gpx);
   let loadedCount = 0;
   const loadingEl = document.getElementById('loading-stat');
   const loadingCountEl = document.getElementById('s-loading');
-  if (ridesWithGpx.length > 0) {
-    loadingCountEl.textContent = `0/${ridesWithGpx.length}`;
-    loadingEl.style.display = '';
-  }
+  if (ridesWithGpx.length > 0) { loadingCountEl.textContent = `0/${ridesWithGpx.length}`; loadingEl.style.display = ''; }
 
   function onGpxDone() {
     loadedCount++;
     loadingCountEl.textContent = `${loadedCount}/${ridesWithGpx.length}`;
-    if (loadedCount === ridesWithGpx.length) {
-      setTimeout(() => { loadingEl.style.display = 'none'; }, 1000);
-    }
+    if (loadedCount === ridesWithGpx.length) setTimeout(() => { loadingEl.style.display = 'none'; }, 1000);
   }
 
-  // Lance tous les chargements GPX en parallèle
   for (const ride of allRides) {
     if (!ride.gpx) continue;
     const color = rideColors[ride.id];
@@ -594,22 +636,6 @@ async function loadRides() {
     if (isVisible(ride)) layer.addTo(map);
   }
 }
-
-// ─── FILTRES ──────────────────────────────────────────────────────────────────
-document.querySelectorAll('.toggle').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const { filter, value } = btn.dataset;
-    if (activeFilters[filter].has(value)) {
-      if (activeFilters[filter].size === 1) return; // garde au moins un actif
-      activeFilters[filter].delete(value);
-      btn.classList.remove('active');
-    } else {
-      activeFilters[filter].add(value);
-      btn.classList.add('active');
-    }
-    applyFilters();
-  });
-});
 
 loadRides();
 </script>
