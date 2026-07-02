@@ -633,14 +633,10 @@ function renderTimeline() {
 
 // ─── CHARGEMENT PROGRESSIF ────────────────────────────────────────────────────
 async function loadRides() {
-  // Essaie rides_public.json (site déployé), sinon rides.json (local)
-  let res;
-  try {
-    res = await fetch('data/rides_public.json');
-    if (!res.ok) throw new Error();
-  } catch(e) {
-    res = await fetch('data/rides.json');
-  }
+  // Local → rides.json (toutes tes sorties), déployé → rides_public.json (filtrées)
+  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const file = isLocal ? 'data/rides.json' : 'data/rides_public.json';
+  const res = await fetch(file);
   allRides = await res.json();
 
   await loadPrivacyZones();
