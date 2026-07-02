@@ -311,6 +311,7 @@ let rideColors    = {};         // id → couleur palette
 let layerElevData = {};         // id → [[dist, alt], ...]
 let statutOverrides = {};       // localStorage: statut modifié
 let publicOverrides = {};       // localStorage: visibilité publique
+let PRIVACY_ZONES = [];         // zones de confidentialité GPS
 
 let activeFilters = {
   type:      new Set(['gravel', 'route']),
@@ -352,6 +353,46 @@ const PALETTE = [
 ];
 function getTrackColor(ride, index) { return PALETTE[index % PALETTE.length]; }
 
+// ─── ZONES DE CONFIDENTIALITÉ GPS ────────────────────────────────────────────
+async function loadPrivacyZones() {
+  try {
+    const res = await fetch('data/privacy_zones.json');
+    if (res.ok) PRIVACY_ZONES = await res.json();
+  } catch(e) { /* pas de fichier de zones — normal en déploiement */ }
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dlat = (lat2-lat1)*Math.PI/180, dlon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dlat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dlon/2)**2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+function isInPrivacyZone(lat, lon) {
+  return PRIVACY_ZONES.some(z => haversineKm(lat, lon, z.lat, z.lon) <= z.radius_km);
+}
+
+function applyPrivacyZones(layer) {
+  if (!PRIVACY_ZONES.length) return;
+  layer.getLayers().forEach(sub => {
+    if (!(sub instanceof L.Polyline)) return;
+    let pts = sub.getLatLngs();
+    if (pts.length && Array.isArray(pts[0])) pts = pts.flat(Infinity);
+    const segments = [];
+    let seg = [];
+    pts.forEach(pt => {
+      if (isInPrivacyZone(pt.lat, pt.lng)) {
+        if (seg.length > 1) segments.push([...seg]);
+        seg = [];
+      } else {
+        seg.push(pt);
+      }
+    });
+    if (seg.length > 1) segments.push(seg);
+    sub.setLatLngs(segments.length ? segments : []);
+  });
+}
+
 // ─── STATUT (localStorage) ────────────────────────────────────────────────────
 function loadStatutOverrides() {
   try { statutOverrides = JSON.parse(localStorage.getItem('gravel-statut-overrides') || '{}'); }
@@ -377,8 +418,12 @@ function loadPublicOverrides() {
   try { publicOverrides = JSON.parse(localStorage.getItem('gravel-public-overrides') || '{}'); }
   catch(e) { publicOverrides = {}; }
   allRides.forEach(r => {
-    if (publicOverrides[r.id] !== undefined) r.public = publicOverrides[r.id];
-    else if (r.public === undefined || r.public === null) r.public = true;
+    if (publicOverrides[r.id] !== undefined) {
+      r.public = publicOverrides[r.id];
+    } else if (r.public === undefined || r.public === null) {
+      // Défaut : "à tester" = public, "fait" = privé
+      r.public = (r.statut === 'a_tester');
+    }
   });
 }
 
@@ -598,6 +643,7 @@ async function loadRides() {
   }
   allRides = await res.json();
 
+  await loadPrivacyZones();
   loadStatutOverrides();
   loadPublicOverrides();
   allRides.forEach((ride, i) => { rideColors[ride.id] = getTrackColor(ride, i); });
@@ -626,6 +672,7 @@ async function loadRides() {
       polyline_options: { color, weight: 3, opacity: 0.85 }
     });
     layer.on('loaded', function(e) {
+      applyPrivacyZones(e.target);
       const elevData = getElevationPoints(e.target);
       layerElevData[ride.id] = elevData;
       e.target.bindPopup(popupHTML(ride, elevData), { maxWidth: 300 });

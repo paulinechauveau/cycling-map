@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Maison",
+    "lat": 48.8566,
+    "lon": 2.3522,
+    "radius_km": 0.4
+  },
+  {
+    "name": "Bureau",
+    "lat": 48.8600,
+    "lon": 2.3400,
+    "radius_km": 0.3
+  }
+]

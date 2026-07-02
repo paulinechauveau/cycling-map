@@ -4,3 +4,4 @@
 __pycache__/
 *.pyc
 data/rides.json
+data/privacy_zones.json
