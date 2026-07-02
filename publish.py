@@ -3,20 +3,22 @@
 publish.py — Prépare les fichiers publics pour le déploiement.
 
 Ce script :
-  1. Définit la visibilité par défaut : "à tester" = public, "fait" = privé
-  2. Pose des questions pour les sorties sans décision explicite
+  1. Utilise les champs "public" de rides.json (décidés depuis la carte locale)
+  2. Applique les défauts si nécessaire : "à tester" = public, "fait" = privé
   3. Découpe les traces GPX dans les zones de confidentialité (si privacy_zones.json existe)
   4. Génère data/rides_public.json et gpx_public/ (prêts à committer)
 
-Usage :
-    python publish.py          ← interactif pour les rides sans décision
-    python publish.py --silent ← utilise les champs "public" existants sans demander
+Workflow recommandé :
+    1. Ouvre la carte en local (python -m http.server 8080)
+    2. Clique sur les rides pour régler public / privé / supprimer
+    3. Clique "↓ Exporter rides.json" → remplace data/rides.json
+    4. python publish.py
+    5. git add data/rides_public.json gpx_public/
+    6. git commit -m "publish" && git push
 
-Workflow :
-    1. Crée data/privacy_zones.json (voir data/privacy_zones.example.json)
-    2. python publish.py
-    3. git add data/rides_public.json gpx_public/
-    4. git commit -m "publish" && git push
+Options :
+    python publish.py               ← silencieux (utilise les décisions de la carte)
+    python publish.py --interactive ← pose des questions pour chaque ride
 """
 
 import sys
@@ -33,7 +35,7 @@ PUB_FILE  = DATA_DIR / "rides_public.json"
 ZONES_FILE = DATA_DIR / "privacy_zones.json"
 GPX_PUB_DIR = Path("gpx_public")
 
-SILENT = "--silent" in sys.argv
+INTERACTIVE = "--interactive" in sys.argv   # par défaut : silencieux
 GPX_NS = "http://www.topografix.com/GPX/1/1"
 ET.register_namespace("", GPX_NS)
 
@@ -83,7 +85,7 @@ def main():
         print(f"❌  {ALL_FILE} introuvable.")
         return
 
-    with open(ALL_FILE, encoding="utf-8") as f:
+    with open(ALL_FILE, encoding="utf-8-sig") as f:
         rides = json.load(f)
 
     # Charge les zones de confidentialité
@@ -104,13 +106,12 @@ def main():
 
     changed = False
     for ride in rides:
-        # Défaut : "à tester" = public, "fait" = privé
+        # Applique les défauts seulement si aucune décision explicite
         if ride.get("public") is None:
             ride["public"] = (ride.get("statut") == "a_tester")
             changed = True
 
-        # Mode interactif : affiche chaque ride et demande confirmation
-        if not SILENT:
+        if INTERACTIVE:
             status = "🌍 public" if ride.get("public") else "🔒 privé "
             print(f"\n  [{status}] {ride['name']}")
             print(f"     {ride['date']}  ·  {ride['distance_km']} km  ·  {ride['elevation_m']} m D+  ·  {ride['statut']}")
@@ -118,13 +119,14 @@ def main():
             if raw in ("o", "oui", "y", "yes"):
                 ride["public"] = not ride["public"]
                 changed = True
-            elif raw in ("n", "non"):
-                pass  # conserver
+        else:
+            status = "🌍 public" if ride.get("public") else "🔒 privé "
+            print(f"  [{status}]  {ride['name']}")
 
     if changed:
         with open(ALL_FILE, "w", encoding="utf-8") as f:
             json.dump(rides, f, ensure_ascii=False, indent=2)
-        print(f"\n  ✅ rides.json mis à jour")
+        print(f"\n  ✅ rides.json mis à jour (défauts appliqués)")
 
     # Filtre les rides publiques
     public_rides = [r for r in rides if r.get("public", False)]

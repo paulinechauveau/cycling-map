@@ -311,6 +311,7 @@ let rideColors    = {};         // id → couleur palette
 let layerElevData = {};         // id → [[dist, alt], ...]
 let statutOverrides = {};       // localStorage: statut modifié
 let publicOverrides = {};       // localStorage: visibilité publique
+let deletedRides    = new Set();// localStorage: rides supprimés
 let PRIVACY_ZONES = [];         // zones de confidentialité GPS
 
 let activeFilters = {
@@ -440,6 +441,23 @@ function togglePublic(id) {
   if (layer && map.hasLayer(layer)) setTimeout(() => layer.openPopup(), 50);
 }
 
+// ─── SUPPRESSION ─────────────────────────────────────────────────────────────
+function loadDeletedRides() {
+  try { deletedRides = new Set(JSON.parse(localStorage.getItem('gravel-deleted-rides') || '[]')); }
+  catch(e) { deletedRides = new Set(); }
+  allRides = allRides.filter(r => !deletedRides.has(String(r.id)));
+}
+
+function deleteRide(id) {
+  if (!confirm('Supprimer cette sortie de rides.json ?\n(Action locale — seulement après export + remplacement du fichier)')) return;
+  deletedRides.add(String(id));
+  localStorage.setItem('gravel-deleted-rides', JSON.stringify([...deletedRides]));
+  const layer = layers[id];
+  if (layer) { if (map.hasLayer(layer)) map.removeLayer(layer); delete layers[id]; }
+  allRides = allRides.filter(r => String(r.id) !== String(id));
+  renderList(); renderTimeline(); updateStats();
+}
+
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
 function exportRidesJson() {
   const blob = new Blob([JSON.stringify(allRides, null, 2)], { type: 'application/json' });
@@ -508,6 +526,9 @@ function popupHTML(ride, elevData) {
       <button class="popup-btn ${!isPublic ? 'is-private' : ''}" onclick="togglePublic('${ride.id}')">
         ${isPublic ? '🔒 Masquer' : '🌍 Publier'}
       </button>
+    </div>
+    <div style="margin-top:4px;text-align:right">
+      <button class="popup-btn" style="flex:none;width:auto;padding:4px 10px;font-size:10px;color:var(--text3)" onclick="deleteRide('${ride.id}')">🗑️ Supprimer</button>
     </div>`;
 }
 
@@ -642,6 +663,7 @@ async function loadRides() {
   await loadPrivacyZones();
   loadStatutOverrides();
   loadPublicOverrides();
+  loadDeletedRides();
   allRides.forEach((ride, i) => { rideColors[ride.id] = getTrackColor(ride, i); });
 
   renderYearToggles();
